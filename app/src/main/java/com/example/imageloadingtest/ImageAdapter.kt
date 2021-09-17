@@ -30,10 +30,8 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
             imageUrl = list[position].second,
             imageView = holder.image,
             onBitmapLoadFailure = {
-                Log.e("KKKK", it.message.toString())
             }
         )
-        Log.e("UUUU", "$position")
     }
 
     override fun getItemCount() = list.size

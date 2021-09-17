@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getImageList() = (600..2000).map {
+    private fun getImageList() = (0..2000).map {
         it to "https://picsum.photos/id/$it/270/550"
     }
 }
