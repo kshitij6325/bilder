@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.bilder2.Bilder
+import com.example.bilder.Bilder
 
 class ImageAdapter(private val list: List<Pair<Int, String>>) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {

@@ -1,4 +1,4 @@
-package com.example.bilder2
+package com.example.bilder
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -7,10 +7,10 @@ import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
-import com.example.bilder2.cache.BilderCache
-import com.example.bilder2.cache.Cache
-import com.example.bilder2.network.BilderDownloader
-import com.example.bilder2.network.DownloadRequest
+import com.example.bilder.cache.BilderCache
+import com.example.bilder.cache.Cache
+import com.example.bilder.network.BilderDownloader
+import com.example.bilder.network.DownloadRequest
 import kotlinx.coroutines.*
 
 private const val TAG_ERROR = "**Bilder Error**"

@@ -1,9 +1,9 @@
-package com.example.bilder2.cache
+package com.example.bilder.cache
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.example.bilder2.log
+import com.example.bilder.log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive

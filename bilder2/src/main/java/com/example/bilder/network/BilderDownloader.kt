@@ -1,4 +1,4 @@
-package com.example.bilder2.network
+package com.example.bilder.network
 
 import android.app.Activity
 import kotlinx.coroutines.Dispatchers

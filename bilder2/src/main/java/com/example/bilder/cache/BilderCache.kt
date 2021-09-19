@@ -1,4 +1,4 @@
-package com.example.bilder2.cache
+package com.example.bilder.cache
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -16,34 +16,34 @@ internal object BilderCache : Cache<ByteArray, Bitmap?> {
     private val diskCache = DiskCache
 
     private fun onImMemoryCacheEvict(key: String, bm: Bitmap?) {
-        GlobalScope.launch(Dispatchers.Default) { diskCache.addAndGet(key, bm) }
+        GlobalScope.launch(Dispatchers.Default) { DiskCache.addAndGet(key, bm) }
     }
 
     override fun init(context: Context) = apply {
-        diskCache.init(context)
-        imMemoryCache.onEvict = this::onImMemoryCacheEvict
+        DiskCache.init(context)
+        InMemoryCache.onEvict = this::onImMemoryCacheEvict
     }
 
     override suspend fun get(key: String): Bitmap? {
-        return imMemoryCache.get(key) ?: diskCache.get(key)
+        return InMemoryCache.get(key) ?: DiskCache.get(key)
     }
 
     override suspend fun addAndGet(key: String, bmData: ByteArray): Bitmap? {
-        return imMemoryCache.addAndGet(key, bmData)
+        return InMemoryCache.addAndGet(key, bmData)
     }
 
     fun clearDiskCache() {
-        GlobalScope.launch(Dispatchers.Default) { diskCache.clear() }
+        GlobalScope.launch(Dispatchers.Default) { DiskCache.clear() }
     }
 
     fun clearMemoryCache() {
-        GlobalScope.launch(Dispatchers.Default) { imMemoryCache.clear() }
+        GlobalScope.launch(Dispatchers.Default) { InMemoryCache.clear() }
     }
 
     override val maxSize: Int
         get() = 0
 
-    override fun getSize() = imMemoryCache.getSize() + diskCache.getSize()
+    override fun getSize() = InMemoryCache.getSize() + DiskCache.getSize()
 
     override suspend fun clear() {
         clearDiskCache()
