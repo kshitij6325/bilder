@@ -1,11 +1,13 @@
 package com.example.imageloadingtest
 
+import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.bilder2.Bilder
 
 class ImageAdapter(private val list: List<Pair<Int, String>>) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
@@ -21,15 +23,15 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        Glide.with(holder.image.context).load(list[position].second)
+        /*Glide.with(holder.image.context).load(list[position].second)
             .into(holder.image)
-        /* Bilder.load(
+        */ Bilder.load(
             holder.image.context as Activity,
             imageUrl = list[position].second,
             imageView = holder.image,
             onBitmapLoadFailure = {
             }
-        )*/
+        )
     }
 
     override fun getItemCount() = list.size
