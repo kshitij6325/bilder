@@ -1,3 +1,2 @@
 rootProject.name = "ImageLoadingTest"
 include ':app'
-include ':bilder'
