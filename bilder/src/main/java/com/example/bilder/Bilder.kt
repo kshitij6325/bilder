@@ -31,7 +31,7 @@ object Bilder {
     /**
      * For caching bitmaps. Currently only supports inMemory caching using [LruCache]
      * */
-    private var imageCache: Cache<ByteArray, Bitmap?>? = null
+    private var imageCache: Cache<Bitmap, Bitmap?>? = null
 
     /**
      * Loads image from url to imageView. If image is available in cache use that else download the
@@ -47,7 +47,7 @@ object Bilder {
      * */
     fun load(
         activity: Activity,
-        imageUrl: String,
+        source: Source,
         imageView: ImageView? = null,
         @DrawableRes placeHolder: Int? = null,
         onBitmapLoaded: ((Bitmap) -> Unit)? = null,
@@ -56,31 +56,53 @@ object Bilder {
         kotlin.run {
             synchronized(this) {
                 if (imageCache == null) {
-                    imageCache = BilderCache.init(context = activity)
+                    imageCache = BilderCache(context = activity)
                 }
             }
             imageView?.setImageResource(placeHolder ?: 0)
             scope.launch {
-                val key = geKey(imageUrl)
+                val key = geKey(source)
                 prepareImageView(imageView, this)
-                imageCache?.get(key)?.run {
-                    onBitmapLoaded?.invoke(this)
-                    scaleAndSetBitmap(this, imageView = imageView)
+                imageCache?.get(key)?.let { bm ->
+                    imageView?.run {
+                        setImageBitmap(bm)
+                    }
+                    onBitmapLoaded?.invoke(bm)
                 } ?: run {
-                    imageDownloader.download(imageUrl, activity).run {
-                        when (this) {
-                            is DownloadRequest.Success -> {
-                                imageCache?.addAndGet(key, data)
-                                    ?.run {
-                                        onBitmapLoaded?.invoke(this)
-                                        scaleAndSetBitmap(this, imageView = imageView)
+                    when (source) {
+                        is Source.Url -> {
+                            imageDownloader.download(source.src, activity).run {
+                                when (this) {
+                                    is DownloadRequest.Success -> {
+                                        imageView?.let {
+                                            it.setImageBitmap(
+                                                getDownScaledBitmap(data, it.width, it.height)
+                                                    .also { bm -> imageCache?.addAndGet(key, bm) }
+                                            )
+                                        }
                                     }
+                                    is DownloadRequest.Error -> {
+                                        onBitmapLoadFailure?.invoke(e)
+                                    }
+                                    is DownloadRequest.Canceled -> {
+                                    }
+                                }
                             }
-                            is DownloadRequest.Error -> {
-                                onBitmapLoadFailure?.invoke(e)
+                        }
+                        is Source.Bitmap -> {
+                            imageView?.run {
+                                setImageBitmap(
+                                    getDownScaledBitmap(
+                                        source.src,
+                                        width,
+                                        height
+                                    ).also { bm ->
+                                        imageCache?.addAndGet(key, bm)
+                                    }
+                                )
                             }
-                            is DownloadRequest.Canceled -> {
-                            }
+                        }
+                        is Source.DrawableRes -> {
                         }
                     }
                 }
@@ -91,37 +113,10 @@ object Bilder {
     /**
      * Key used for caching bitmaps in [BilderCache].
      * */
-    private fun geKey(imageUrl: String) = imageUrl.replace('/', '_').replace(':', '_')
-
-    /**
-     * Scale and set bitmap according to imageView dimensions.
-     * */
-    private suspend fun scaleAndSetBitmap(bitmap: Bitmap, imageView: ImageView?): Bitmap? =
-        withContext(Dispatchers.Default) {
-            if (isActive) imageView?.let {
-                val (height: Int, width: Int) = getRequiredSize(bitmap, imageView)
-                log("${bitmap.height},${bitmap.width} is scaled to $height,$width")
-                Bitmap.createScaledBitmap(bitmap, width, height, false).also {
-                    withContext(Dispatchers.Main) {
-                        log((bitmap === it).toString())
-                        imageView.setImageBitmap(it)
-                    }
-                }
-            } else throw CancellationException()
-        }
-
-    /**
-     * Returns the required dimensions in [scaleAndSetBitmap] that the bitmap needs to scale to.
-     * */
-    private fun getRequiredSize(bitmap: Bitmap, imageView: ImageView): Pair<Int, Int> {
-        val (bmHeight: Float, bmWidth: Float) = bitmap.height.toFloat() to bitmap.width.toFloat()
-        val (imHeightLp: Int, imWidthLp: Int) = imageView.height to imageView.width
-        return if (imHeightLp > 0 && imWidthLp > 0 && (imHeightLp < bmHeight || imWidthLp < bmWidth)) {
-            if (imWidthLp > imHeightLp && bmWidth > imWidthLp) {
-                ((bmHeight / bmWidth) * imWidthLp).toInt() to imWidthLp
-            } else
-                imHeightLp to ((bmHeight / bmWidth) * imHeightLp).toInt()
-        } else bmHeight.toInt() to bmWidth.toInt()
+    private fun geKey(source: Source) = when (source) {
+        is Source.Url -> source.src.replace('/', '_').replace(':', '_')
+        is Source.Bitmap -> source.src.toString()
+        is Source.DrawableRes -> source.src.toString()
     }
 
     /**
@@ -152,7 +147,11 @@ object Bilder {
         scope.cancel()
     }
 
-    class Task(private val job: Job) {
+    class Task(
+        private
+
+        val job: Job
+    ) {
         fun cancel() = job.cancel()
     }
 }

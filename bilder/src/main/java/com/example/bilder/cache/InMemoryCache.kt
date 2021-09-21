@@ -1,12 +1,9 @@
 package com.example.bilder.cache
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.lang.ref.SoftReference
 import java.util.*
@@ -15,7 +12,7 @@ import kotlin.collections.HashSet
 /**
  * Implementation of [Cache] that caches bitmaps in memory using [LruCache].
  * */
-internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
+internal class InMemoryCache : Cache<Bitmap, Bitmap?> {
 
     /**
      * [LruCache] for caching bitmaps.
@@ -23,8 +20,6 @@ internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
     private val cache by lazy {
         initializeCache(maxSize)
     }
-
-    var onEvict: ((String, Bitmap?) -> Unit)? = null
 
     /**
      * When evicting any bitmap from cache, they are stored here to check if they can be reused using
@@ -70,7 +65,7 @@ internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
 
     /**
      * Reuse bitmap if possible from [reusableBitmaps] instead of creating a new Bitmap object everytime.
-     * */
+     * *//*
     private suspend fun getReusedBitmapIfPossible(key: String, byteArray: ByteArray, len: Int) =
         withContext(Dispatchers.Default) {
             return@withContext if (isActive) BitmapFactory.Options().run {
@@ -83,10 +78,11 @@ internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
             } else throw CancellationException()
         }
 
+    */
     /**
      * Used in [getReusedBitmapIfPossible] to iterate [reusableBitmaps] and check if it has any
      * bitmap with appropriate size that can be reused
-     * */
+     * *//*
     private fun getBitmapFromReusableSet(options: BitmapFactory.Options): Bitmap? {
         reusableBitmaps.takeIf { it.isNotEmpty() }?.let { reusableBitmaps ->
             synchronized(reusableBitmaps) {
@@ -108,9 +104,10 @@ internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
         return null
     }
 
+    */
     /**
      * Check if bitmap size required is <= bitmap size available. If yes, this bitmap can be reused.
-     * */
+     * *//*
     private fun canUseForInBitmap(
         candidate: Bitmap,
         targetOptions: BitmapFactory.Options
@@ -130,8 +127,11 @@ internal object InMemoryCache : Cache<ByteArray, Bitmap?> {
         }
     }
 
-    override suspend fun addAndGet(key: String, bmData: ByteArray) =
-        getReusedBitmapIfPossible(key, bmData, bmData.size)
+    */
+    override suspend fun addAndGet(key: String, bmData: Bitmap) =
+        withContext(Dispatchers.Default) {
+            return@withContext cache.put(key, bmData)
+        }
 
-    override fun init(context: Context) = this
+    override var onEvict: ((key: String, data: Bitmap?) -> Unit)? = null
 }

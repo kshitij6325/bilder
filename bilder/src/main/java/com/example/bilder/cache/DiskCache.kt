@@ -17,19 +17,9 @@ private val ROOT_DIR = "bilder"
 /**
  * Implementation of [Cache] that caches bitmaps to disk.
  * */
-internal object DiskCache : Cache<Bitmap?, Bitmap?> {
+internal class DiskCache(context: Context) : Cache<Bitmap?, Bitmap?> {
 
-    private var rootDir: File? = null
-
-    /**
-     * Init [rootDir] in app's private folder on disk.
-     * */
-    override fun init(context: Context) = apply {
-        if (rootDir == null) {
-            rootDir = context.getExternalFilesDir(ROOT_DIR)
-            log("${rootDir?.absolutePath}")
-        }
-    }
+    private var rootDir = context.getExternalFilesDir(ROOT_DIR)
 
     override val maxSize = ((Runtime.getRuntime().maxMemory() / MB) / 4).toInt()
 
@@ -94,4 +84,6 @@ internal object DiskCache : Cache<Bitmap?, Bitmap?> {
             log("freed ${memoryReleased / KB} KB from disk")
         }
     }
+
+    override var onEvict: ((key: String, data: Bitmap?) -> Unit)? = null
 }

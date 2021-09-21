@@ -6,8 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.bilder.Bilder
+import com.example.bilder.Source
 
 class ImageAdapter(private val list: List<Pair<Int, String>>) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
@@ -27,7 +27,7 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
             .into(holder.image)
         */ Bilder.load(
             holder.image.context as Activity,
-            imageUrl = list[position].second,
+            source = Source.Url(list[position].second),
             imageView = holder.image,
             onBitmapLoadFailure = {
             }

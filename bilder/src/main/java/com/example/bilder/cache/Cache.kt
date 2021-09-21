@@ -10,12 +10,6 @@ import android.content.Context
 internal interface Cache<Input, Output> {
 
     /**
-     * Initialize cache.
-     * @param context Context in which the cache is created.
-     * */
-    fun init(context: Context): Cache<Input, Output>
-
-    /**
      * Max size of cache.
      * */
     val maxSize: Int
@@ -39,4 +33,6 @@ internal interface Cache<Input, Output> {
      * Clear the cache.
      * */
     suspend fun clear()
+
+    var onEvict: ((key: String, data: Output) -> Unit)?
 }
