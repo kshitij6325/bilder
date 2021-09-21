@@ -1,6 +1,7 @@
 package com.example.imageloadingtest
 
 import android.app.Activity
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,13 +24,14 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        /*Glide.with(holder.image.context).load(list[position].second)
-            .into(holder.image)
-        */ Bilder.load(
+        Bilder.load(
             holder.image.context as Activity,
-            source = Source.Url(list[position].second),
-            imageView = holder.image,
+            source = Source.DrawableRes(R.drawable.placeholder),
             onBitmapLoadFailure = {
+                Log.e("Bilder log", "failed with ${it.message}")
+            },
+            onBitmapLoaded = {
+                Log.e("Bilder log", "Successfully loaded")
             }
         )
     }

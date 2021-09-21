@@ -64,9 +64,7 @@ object Bilder {
                 val key = geKey(source)
                 prepareImageView(imageView, this)
                 imageCache?.get(key)?.also {
-                    imageView?.run { ->
-                        setImageBitmap(it)
-                    }
+                    imageView?.setImageBitmap(it)
                     onBitmapLoaded?.invoke(it)
                 } ?: run {
                     when (source) {
@@ -74,11 +72,14 @@ object Bilder {
                             imageDownloader.download(source.src, activity).run {
                                 when (this) {
                                     is DownloadRequest.Success -> {
-                                        imageView?.let {
-                                            it.setImageBitmap(
-                                                getDownScaledBitmap(data, it.width, it.height)
-                                                    .also { bm -> imageCache?.addAndGet(key, bm) }
-                                            )
+                                        getDownScaledBitmap(
+                                            data,
+                                            imageView?.width,
+                                            imageView?.height
+                                        ).also { bm ->
+                                            imageCache?.addAndGet(key, bm)
+                                            imageView?.setImageBitmap(bm)
+                                            onBitmapLoaded?.invoke(bm)
                                         }
                                     }
                                     is DownloadRequest.Error -> {
@@ -90,30 +91,26 @@ object Bilder {
                             }
                         }
                         is Source.Bitmap -> {
-                            imageView?.run {
-                                setImageBitmap(
-                                    getDownScaledBitmap(
-                                        source.src,
-                                        width,
-                                        height
-                                    ).also { bm ->
-                                        imageCache?.addAndGet(key, bm)
-                                    }
-                                )
+                            getDownScaledBitmap(
+                                source.src,
+                                imageView?.width,
+                                imageView?.height
+                            ).also { bm ->
+                                imageCache?.addAndGet(key, bm)
+                                imageView?.setImageBitmap(bm)
+                                onBitmapLoaded?.invoke(bm)
                             }
                         }
                         is Source.DrawableRes -> {
-                            imageView?.run {
-                                setImageBitmap(
-                                    getDownScaledBitmap(
-                                        context.resources,
-                                        source.src,
-                                        width,
-                                        height
-                                    ).also { bm ->
-                                        imageCache?.addAndGet(key, bm)
-                                    }
-                                )
+                            getDownScaledBitmap(
+                                activity.resources,
+                                source.src,
+                                imageView?.width,
+                                imageView?.height
+                            ).also { bm ->
+                                imageCache?.addAndGet(key, bm)
+                                imageView?.setImageBitmap(bm)
+                                onBitmapLoaded?.invoke(bm)
                             }
                         }
                     }

@@ -7,10 +7,11 @@ import androidx.annotation.DrawableRes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-suspend fun getDownScaledBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap =
+suspend fun getDownScaledBitmap(bitmap: Bitmap, width: Int?, height: Int?): Bitmap =
     withContext(Dispatchers.Default) {
         val (bmHeight: Float, bmWidth: Float) = bitmap.height.toFloat() to bitmap.width.toFloat()
-        return@withContext if (height > 0 && width > 0 && (height < bmHeight || width < bmWidth)) {
+        return@withContext if (height == null || width == null) bitmap
+        else if (height > 0 && width > 0 && (height < bmHeight || width < bmWidth)) {
             if (width > height && bmWidth > width) {
                 Bitmap.createScaledBitmap(
                     bitmap,
@@ -28,36 +29,45 @@ suspend fun getDownScaledBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap
         } else bitmap
     }
 
-suspend fun getDownScaledBitmap(bmArray: ByteArray, width: Int, height: Int): Bitmap =
+suspend fun getDownScaledBitmap(bmArray: ByteArray, width: Int?, height: Int?): Bitmap =
     withContext(Dispatchers.Default) {
-        return@withContext BitmapFactory.Options().run {
-            inJustDecodeBounds = true
-            BitmapFactory.decodeByteArray(bmArray, 0, bmArray.size)
+        if (width == null || height == null) return@withContext BitmapFactory.decodeByteArray(
+            bmArray,
+            0,
+            bmArray.size
+        ) else
+            return@withContext BitmapFactory.Options().run {
+                inJustDecodeBounds = true
+                BitmapFactory.decodeByteArray(bmArray, 0, bmArray.size)
 
-            inSampleSize = calculateInSampleSize(this, width, height)
+                inSampleSize = calculateInSampleSize(this, width ?: 0, height ?: 0)
 
-            inJustDecodeBounds = false
+                inJustDecodeBounds = false
 
-            BitmapFactory.decodeByteArray(bmArray, 0, bmArray.size)
-        }
+                BitmapFactory.decodeByteArray(bmArray, 0, bmArray.size)
+            }
     }
 
 suspend fun getDownScaledBitmap(
     res: Resources,
     @DrawableRes resId: Int,
-    width: Int,
-    height: Int
+    width: Int?,
+    height: Int?
 ): Bitmap = withContext(Dispatchers.Default) {
-    return@withContext BitmapFactory.Options().run {
-        inJustDecodeBounds = true
-        BitmapFactory.decodeResource(res, resId)
+    return@withContext if (width == null || height == null) BitmapFactory.decodeResource(
+        res,
+        resId
+    ) else
+        BitmapFactory.Options().run {
+            inJustDecodeBounds = true
+            BitmapFactory.decodeResource(res, resId)
 
-        inSampleSize = calculateInSampleSize(this, width, height)
+            inSampleSize = calculateInSampleSize(this, width ?: 0, height ?: 0)
 
-        inJustDecodeBounds = false
+            inJustDecodeBounds = false
 
-        BitmapFactory.decodeResource(res, resId)
-    }
+            BitmapFactory.decodeResource(res, resId)
+        }
 }
 
 private fun calculateInSampleSize(
