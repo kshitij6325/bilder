@@ -63,11 +63,11 @@ object Bilder {
             scope.launch {
                 val key = geKey(source)
                 prepareImageView(imageView, this)
-                imageCache?.get(key)?.let { bm ->
-                    imageView?.run {
-                        setImageBitmap(bm)
+                imageCache?.get(key)?.also {
+                    imageView?.run { ->
+                        setImageBitmap(it)
                     }
-                    onBitmapLoaded?.invoke(bm)
+                    onBitmapLoaded?.invoke(it)
                 } ?: run {
                     when (source) {
                         is Source.Url -> {
@@ -103,6 +103,7 @@ object Bilder {
                             }
                         }
                         is Source.DrawableRes -> {
+                            log("making new")
                             imageView?.run {
                                 setImageBitmap(
                                     getDownScaledBitmap(
