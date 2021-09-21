@@ -27,7 +27,7 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
             .into(holder.image)
         */ Bilder.load(
             holder.image.context as Activity,
-            source = Source.Url(list[position].second),
+            source = Source.DrawableRes(R.drawable.monster),
             imageView = holder.image,
             onBitmapLoadFailure = {
             }

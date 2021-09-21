@@ -103,6 +103,18 @@ object Bilder {
                             }
                         }
                         is Source.DrawableRes -> {
+                            imageView?.run {
+                                setImageBitmap(
+                                    getDownScaledBitmap(
+                                        context.resources,
+                                        source.src,
+                                        width,
+                                        height
+                                    ).also { bm ->
+                                        imageCache?.addAndGet(key, bm)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
