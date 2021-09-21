@@ -26,7 +26,7 @@ object Bilder {
     /**
      * For Downloading images from server.
      * */
-    private val imageDownloader = BilderDownloader
+    private val imageDownloader = BilderDownloader()
 
     /**
      * For caching bitmaps. Currently only supports inMemory caching using [LruCache]
@@ -103,7 +103,6 @@ object Bilder {
                             }
                         }
                         is Source.DrawableRes -> {
-                            log("making new")
                             imageView?.run {
                                 setImageBitmap(
                                     getDownScaledBitmap(

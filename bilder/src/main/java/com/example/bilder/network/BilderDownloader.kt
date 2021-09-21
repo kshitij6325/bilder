@@ -13,7 +13,7 @@ import java.net.URL
  * Downloads image from given url on [Dispatchers.IO] thread.
  * Cancels request if given [Activity] is in finishing state.
  * */
-internal object BilderDownloader {
+internal class BilderDownloader {
 
     suspend fun download(imageUrl: String, activity: Activity): DownloadRequest =
         withContext(Dispatchers.IO) {
