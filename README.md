@@ -12,10 +12,10 @@ allprojects {
   }
 }
 ```
-Add following to your app's build.gralde
+Add following to your module's build.gralde
 ```
 dependencies {
-  implementation 'com.github.kshitij6325:bilder:1.1.2'
+  implementation 'com.github.kshitij6325:bilder:latest-version'
 }
 ```
 ## How to use?
