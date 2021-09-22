@@ -1,7 +1,5 @@
 package com.example.bilder.cache
 
-import android.content.Context
-
 /**
  * Base interface class for cache.
  * [Input] type of input that the method [addAndGet] will process.

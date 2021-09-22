@@ -3,7 +3,6 @@ package com.example.bilder
 import android.app.Activity
 import android.graphics.Bitmap
 import android.util.Log
-import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
@@ -11,7 +10,6 @@ import com.example.bilder.cache.*
 import com.example.bilder.cache.Cache
 import com.example.bilder.cache.DiskCache
 import com.example.bilder.cache.InMemoryCache
-import com.example.bilder.cache.NoCache
 import com.example.bilder.network.BilderDownloader
 import com.example.bilder.network.DownloadRequest
 import kotlinx.coroutines.*
@@ -33,22 +31,9 @@ object Bilder {
     private val imageDownloader = BilderDownloader()
 
     /**
-     * For caching bitmaps. Currently only supports inMemory caching using [LruCache]
+     * For caching bitmaps.
      * */
     private var imageCache: Cache<Bitmap?, Bitmap?>? = null
-
-    /**
-     * Loads image from url to imageView. If image is available in cache use that else download the
-     * image,cache it and then use the scaled image for imageView
-     *
-     * @param activity for which the request is initiated.Required to handle cancellation if [Activity.isFinishing]
-     * @param imageUrl Url of the image to be loaded.
-     * @param placeHolder drawable id for placeholder image
-     * @param onBitmapLoaded callback for bitmap successfully loaded
-     * @param onBitmapLoadFailure callback for when bitmap load fails
-     *
-     * @return [Task] for the current request
-     * */
 
     class Config(private val activity: Activity) {
 
@@ -60,6 +45,13 @@ object Bilder {
 
         fun configure(configBuilder: Config.() -> Unit) = apply(configBuilder)
 
+        /**
+         * Loads image from source.
+         *
+         * @param source [Source] of the image to be loaded.
+         * @param placeHolder drawable id for placeholder image
+         * @return [Task] for the current request
+         * */
         fun load(
             source: Source,
             imageView: ImageView? = null,
@@ -70,10 +62,10 @@ object Bilder {
                 synchronized(this) {
                     if (imageCache == null) {
                         imageCache = when {
-                            disableDiskCache && disableMemoryCache -> NoCache()
                             disableMemoryCache && !disableDiskCache -> DiskCache(activity)
                             !disableDiskCache && disableMemoryCache -> InMemoryCache()
-                            else -> BilderCache(activity)
+                            !disableDiskCache && !disableMemoryCache -> BilderCache(activity)
+                            else -> null
                         }
                     }
                 }
@@ -153,7 +145,6 @@ object Bilder {
     }
 
     /**
-     * Set placeholder drawable.
      * Add [View.addOnAttachStateChangeListener] on the imageView. This is to cancel any redundant
      * coroutine for views that have been detached.
      * */
