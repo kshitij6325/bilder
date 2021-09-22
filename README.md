@@ -22,12 +22,11 @@ dependencies {
 ## How to use?
 ```
 override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        Bilder.load(
-            holder.image.context as Activity,
-            source = Source.Url(list[position].second),
-            imageView = holder.image,
+        Bilder.init(holder.image.context as Activity).configure {
             onBitmapLoadFailure = {
+                Log.e("Bilder:: ", it.message.toString())
             }
-        )
+        }.load(Source.Url(list[position].second), imageView = holder.image)
     }
+
 ```
