@@ -7,8 +7,11 @@ import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
-import com.example.bilder.cache.BilderCache
+import com.example.bilder.cache.*
 import com.example.bilder.cache.Cache
+import com.example.bilder.cache.DiskCache
+import com.example.bilder.cache.InMemoryCache
+import com.example.bilder.cache.NoCache
 import com.example.bilder.network.BilderDownloader
 import com.example.bilder.network.DownloadRequest
 import kotlinx.coroutines.*
@@ -21,7 +24,8 @@ object Bilder {
     /**
      * Parent scope for creating each load request coroutine.
      * */
-    private var scope = CoroutineScope(Dispatchers.Main)
+    private var scope =
+        CoroutineScope(Dispatchers.Main)
 
     /**
      * For Downloading images from server.
@@ -31,7 +35,7 @@ object Bilder {
     /**
      * For caching bitmaps. Currently only supports inMemory caching using [LruCache]
      * */
-    private var imageCache: Cache<Bitmap, Bitmap?>? = null
+    private var imageCache: Cache<Bitmap?, Bitmap?>? = null
 
     /**
      * Loads image from url to imageView. If image is available in cache use that else download the
@@ -45,79 +49,99 @@ object Bilder {
      *
      * @return [Task] for the current request
      * */
-    fun load(
-        activity: Activity,
-        source: Source,
-        imageView: ImageView? = null,
-        @DrawableRes placeHolder: Int? = null,
-        onBitmapLoaded: ((Bitmap) -> Unit)? = null,
-        onBitmapLoadFailure: ((java.lang.Exception) -> Unit)? = null
-    ) = Task(
-        kotlin.run {
-            synchronized(this) {
-                if (imageCache == null) {
-                    imageCache = BilderCache(context = activity)
+
+    class Config(private val activity: Activity) {
+
+        var disableMemoryCache: Boolean = false
+        var disableDiskCache: Boolean = false
+
+        var onBitmapLoaded: ((Bitmap) -> Unit)? = null
+        var onBitmapLoadFailure: ((java.lang.Exception) -> Unit)? = null
+
+        fun configure(configBuilder: Config.() -> Unit) = apply(configBuilder)
+
+        fun load(
+            source: Source,
+            imageView: ImageView? = null,
+            @DrawableRes
+            placeHolder: Int? = null
+        ) = Task(
+            kotlin.run {
+                synchronized(this) {
+                    if (imageCache == null) {
+                        imageCache = when {
+                            disableDiskCache && disableMemoryCache -> NoCache()
+                            disableMemoryCache && !disableDiskCache -> DiskCache(activity)
+                            !disableDiskCache && disableMemoryCache -> InMemoryCache()
+                            else -> BilderCache(activity)
+                        }
+                    }
                 }
-            }
-            imageView?.setImageResource(placeHolder ?: 0)
-            scope.launch {
-                val key = geKey(source)
-                prepareImageView(imageView, this)
-                imageCache?.get(key)?.also {
-                    imageView?.setImageBitmap(it)
-                    onBitmapLoaded?.invoke(it)
-                } ?: run {
-                    when (source) {
-                        is Source.Url -> {
-                            imageDownloader.download(source.src, activity).run {
-                                when (this) {
-                                    is DownloadRequest.Success -> {
-                                        getDownScaledBitmap(
-                                            data,
-                                            imageView?.width,
-                                            imageView?.height
-                                        ).also { bm ->
-                                            imageCache?.addAndGet(key, bm)
-                                            imageView?.setImageBitmap(bm)
-                                            onBitmapLoaded?.invoke(bm)
+                imageView?.setImageResource(placeHolder ?: 0)
+                scope.launch {
+                    val key = geKey(source)
+                    prepareImageView(imageView, this)
+                    imageCache?.get(key)?.also {
+                        imageView?.setImageBitmap(it)
+                        onBitmapLoaded?.invoke(it)
+                    } ?: run {
+                        when (source) {
+                            is Source.Url -> {
+                                imageDownloader.download(source.src, activity).run {
+                                    when (this) {
+                                        is DownloadRequest.Success -> {
+                                            getDownScaledBitmap(
+                                                data,
+                                                imageView?.width,
+                                                imageView?.height
+                                            ).also { bm ->
+                                                imageCache?.addAndGet(key, bm)
+                                                imageView?.setImageBitmap(bm)
+                                                onBitmapLoaded?.invoke(bm)
+                                            }
                                         }
-                                    }
-                                    is DownloadRequest.Error -> {
-                                        onBitmapLoadFailure?.invoke(e)
-                                    }
-                                    is DownloadRequest.Canceled -> {
+                                        is DownloadRequest.Error -> {
+                                            onBitmapLoadFailure?.invoke(e)
+                                        }
+                                        is DownloadRequest.Canceled -> {
+                                        }
                                     }
                                 }
                             }
-                        }
-                        is Source.Bitmap -> {
-                            getDownScaledBitmap(
-                                source.src,
-                                imageView?.width,
-                                imageView?.height
-                            ).also { bm ->
-                                imageCache?.addAndGet(key, bm)
-                                imageView?.setImageBitmap(bm)
-                                onBitmapLoaded?.invoke(bm)
+                            is Source.Bitmap -> {
+                                getDownScaledBitmap(
+                                    source.src,
+                                    imageView?.width,
+                                    imageView?.height
+                                ).also { bm ->
+                                    imageCache?.addAndGet(key, bm)
+                                    imageView?.setImageBitmap(bm)
+                                    onBitmapLoaded?.invoke(bm)
+                                }
                             }
-                        }
-                        is Source.DrawableRes -> {
-                            getDownScaledBitmap(
-                                activity.resources,
-                                source.src,
-                                imageView?.width,
-                                imageView?.height
-                            ).also { bm ->
-                                imageCache?.addAndGet(key, bm)
-                                imageView?.setImageBitmap(bm)
-                                onBitmapLoaded?.invoke(bm)
+                            is Source.DrawableRes -> {
+                                getDownScaledBitmap(
+                                    activity.resources,
+                                    source.src,
+                                    imageView?.width,
+                                    imageView?.height
+                                ).also { bm ->
+                                    imageCache?.addAndGet(key, bm)
+                                    imageView?.setImageBitmap(bm)
+                                    onBitmapLoaded?.invoke(bm)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    )
+        )
+    }
+
+    fun init(activity: Activity) = Config(activity).also {
+        if (scope.coroutineContext[Job]?.isCancelled == true) scope =
+            CoroutineScope(Dispatchers.Main)
+    }
 
     /**
      * Key used for caching bitmaps in [BilderCache].
@@ -150,17 +174,13 @@ object Bilder {
     }
 
     /**
-     * Cancel all the coroutines running in the [scope].
+     * Cancel current [scope].
      * */
     fun stop() {
         scope.cancel()
     }
 
-    class Task(
-        private
-
-        val job: Job
-    ) {
+    class Task(private val job: Job) {
         fun cancel() = job.cancel()
     }
 }

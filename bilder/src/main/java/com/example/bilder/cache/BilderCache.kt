@@ -8,9 +8,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Singleton that handles and maintains cache of bitmaps using [InMemoryCache] for memory caching and
- * [DiskCache] for caching in disk.
+ * [DiskCache] for caching on disk.
  * */
-internal class BilderCache(context: Context) : Cache<Bitmap, Bitmap?> {
+internal class BilderCache(context: Context) : Cache<Bitmap?, Bitmap?> {
 
     private val imMemoryCache = InMemoryCache()
     private val diskCache = DiskCache(context)
@@ -25,7 +25,7 @@ internal class BilderCache(context: Context) : Cache<Bitmap, Bitmap?> {
         return imMemoryCache.get(key) ?: diskCache.get(key)
     }
 
-    override suspend fun addAndGet(key: String, bmData: Bitmap): Bitmap? {
+    override suspend fun addAndGet(key: String, bmData: Bitmap?): Bitmap? {
         return imMemoryCache.addAndGet(key, bmData)
     }
 

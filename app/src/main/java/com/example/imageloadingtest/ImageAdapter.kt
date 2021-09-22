@@ -1,7 +1,5 @@
 package com.example.imageloadingtest
 
-import android.app.Activity
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.bilder.Bilder
 import com.example.bilder.Source
 
-class ImageAdapter(private val list: List<Pair<Int, String>>) :
+class ImageAdapter(private val list: List<Pair<Int, String>>, private val bilder: Bilder.Builder) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
 
     class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -24,16 +22,7 @@ class ImageAdapter(private val list: List<Pair<Int, String>>) :
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        Bilder.load(
-            holder.image.context as Activity,
-            source = Source.DrawableRes(R.drawable.placeholder),
-            onBitmapLoadFailure = {
-                Log.e("Bilder log", "failed with ${it.message}")
-            },
-            onBitmapLoaded = {
-                Log.e("Bilder log", "Successfully loaded")
-            }
-        )
+        bilder.load(Source.Url(list[position].second), imageView = holder.image)
     }
 
     override fun getItemCount() = list.size

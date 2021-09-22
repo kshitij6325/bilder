@@ -3,6 +3,7 @@ package com.example.imageloadingtest
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import com.example.bilder.Bilder
 import com.example.imageloadingtest.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -14,7 +15,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding?.root)
         binding?.let {
-            it.recyclerView.adapter = ImageAdapter(getImageList())
+            it.bn.setOnClickListener { Bilder.stop() }
+            it.recyclerView.adapter = ImageAdapter(
+                getImageList(),
+                Bilder.init(this).configure {
+                    disableMemoryCache = true
+                    disableDiskCache = true
+                }
+            )
             it.recyclerView.layoutManager =
                 GridLayoutManager(this, 4)
         }

@@ -19,12 +19,17 @@ private val ROOT_DIR = "bilder"
  * */
 internal class DiskCache(context: Context) : Cache<Bitmap?, Bitmap?> {
 
-    private var rootDir = context.getExternalFilesDir(ROOT_DIR)
+    private var rootDir = File("${context.cacheDir}/$ROOT_DIR").also {
+        if (!it.exists()) {
+            it.mkdir()
+        }
+        log("disk cache path is ${it.absolutePath}")
+    }
 
     override val maxSize = ((Runtime.getRuntime().maxMemory() / MB) / 4).toInt()
 
     override fun getSize() =
-        rootDir?.listFiles()?.fold(0F, { acc, file -> acc + (file.length() / MB.toFloat()) })
+        rootDir.listFiles()?.fold(0F, { acc, file -> acc + (file.length() / MB.toFloat()) })
             ?.toInt()
             ?: 0
 
@@ -42,7 +47,7 @@ internal class DiskCache(context: Context) : Cache<Bitmap?, Bitmap?> {
                     cleanMemory(byteData.size)
                 }
 
-                val file = File("${rootDir?.absolutePath}/$key")
+                val file = File("${rootDir.absolutePath}/$key")
                 if (file.exists()) {
                     file.delete()
                 }
@@ -57,13 +62,13 @@ internal class DiskCache(context: Context) : Cache<Bitmap?, Bitmap?> {
         }
 
     override suspend fun get(key: String): Bitmap? = withContext(Dispatchers.Default) {
-        return@withContext if (File("${rootDir?.absolutePath}/$key").exists())
-            BitmapFactory.decodeFile("${rootDir?.absolutePath}/$key") else null
+        return@withContext if (File("${rootDir.absolutePath}/$key").exists())
+            BitmapFactory.decodeFile("${rootDir.absolutePath}/$key") else null
     }
 
     private fun cleanMemory(size: Int) {
         var memoryReleased = 0L
-        rootDir?.listFiles()?.forEach {
+        rootDir.listFiles()?.forEach {
             if (memoryReleased < size) {
                 memoryReleased += it.length()
                 it.delete()
@@ -77,7 +82,7 @@ internal class DiskCache(context: Context) : Cache<Bitmap?, Bitmap?> {
     override suspend fun clear() {
         withContext(Dispatchers.Default) {
             var memoryReleased = 0L
-            rootDir?.listFiles()?.forEach {
+            rootDir.listFiles()?.forEach {
                 memoryReleased += it.length()
                 it.delete()
             }

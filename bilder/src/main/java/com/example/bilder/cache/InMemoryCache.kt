@@ -12,7 +12,7 @@ import kotlin.collections.HashSet
 /**
  * Implementation of [Cache] that caches bitmaps in memory using [LruCache].
  * */
-internal class InMemoryCache : Cache<Bitmap, Bitmap?> {
+internal class InMemoryCache : Cache<Bitmap?, Bitmap?> {
 
     /**
      * [LruCache] for caching bitmaps.
@@ -29,7 +29,7 @@ internal class InMemoryCache : Cache<Bitmap, Bitmap?> {
         Collections.synchronizedSet(HashSet<SoftReference<Bitmap>>())
     }
 
-    override val maxSize = ((Runtime.getRuntime().maxMemory() / KB) / 8).toInt()
+    override val maxSize = ((Runtime.getRuntime().maxMemory() / KB) / 16).toInt()
 
     override fun getSize() = cache.size()
 
@@ -128,7 +128,7 @@ internal class InMemoryCache : Cache<Bitmap, Bitmap?> {
     }
 
     */
-    override suspend fun addAndGet(key: String, bmData: Bitmap) =
+    override suspend fun addAndGet(key: String, bmData: Bitmap?) =
         withContext(Dispatchers.Default) {
             return@withContext cache.put(key, bmData)
         }
