@@ -1,8 +1,8 @@
 package com.example.bilder.network
 
 import android.app.Activity
+import com.example.bilder.log
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
@@ -15,7 +15,7 @@ import java.net.URL
  * */
 internal class BilderDownloader {
 
-    suspend fun download(imageUrl: String, activity: Activity): DownloadRequest =
+    suspend fun download(imageUrl: String): DownloadRequest =
         withContext(Dispatchers.IO) {
             try {
                 val url = URL(imageUrl)
@@ -24,9 +24,6 @@ internal class BilderDownloader {
                 val byteArr = ByteArray(1024)
                 var len = bufferedInputStream.read(byteArr)
                 while (len != -1 && isActive) {
-                    if (activity.isFinishing) {
-                        cancel()
-                    }
                     fileOutputStream.write(byteArr, 0, len)
                     len = bufferedInputStream.read(byteArr)
                 }

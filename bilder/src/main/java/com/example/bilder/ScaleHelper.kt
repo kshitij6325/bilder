@@ -49,7 +49,7 @@ suspend fun getDownScaledBitmap(bmArray: ByteArray, width: Int?, height: Int?): 
     }
 
 suspend fun getDownScaledBitmap(
-    res: Resources,
+    res: Resources?,
     @DrawableRes resId: Int,
     width: Int?,
     height: Int?

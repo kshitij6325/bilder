@@ -1,6 +1,5 @@
 package com.example.bilder.cache
 
-import android.content.Context
 import android.graphics.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -10,23 +9,23 @@ import kotlinx.coroutines.launch
  * Singleton that handles and maintains cache of bitmaps using [InMemoryCache] for memory caching and
  * [DiskCache] for caching on disk.
  * */
-internal class BilderCache(context: Context) : Cache<Bitmap?, Bitmap?> {
-
-    private val imMemoryCache = InMemoryCache()
-    private val diskCache = DiskCache(context)
+internal class BilderCache(
+    private val inMemoryCache: Cache<Bitmap?, Bitmap?>,
+    private val diskCache: Cache<Bitmap?, Bitmap?>
+) : Cache<Bitmap?, Bitmap?> {
 
     init {
-        imMemoryCache.onEvict = { key: String, bm: Bitmap? ->
+        inMemoryCache.onEvict = { key: String, bm: Bitmap? ->
             GlobalScope.launch(Dispatchers.Default) { diskCache.addAndGet(key, bm) }
         }
     }
 
     override suspend fun get(key: String): Bitmap? {
-        return imMemoryCache.get(key) ?: diskCache.get(key)
+        return inMemoryCache.get(key) ?: diskCache.get(key)
     }
 
     override suspend fun addAndGet(key: String, bmData: Bitmap?): Bitmap? {
-        return imMemoryCache.addAndGet(key, bmData)
+        return inMemoryCache.addAndGet(key, bmData)
     }
 
     fun clearDiskCache() {
@@ -34,10 +33,10 @@ internal class BilderCache(context: Context) : Cache<Bitmap?, Bitmap?> {
     }
 
     fun clearMemoryCache() {
-        GlobalScope.launch(Dispatchers.Default) { imMemoryCache.clear() }
+        GlobalScope.launch(Dispatchers.Default) { inMemoryCache.clear() }
     }
 
-    override fun getSize() = imMemoryCache.getSize() + diskCache.getSize()
+    override fun getSize() = inMemoryCache.getSize() + diskCache.getSize()
 
     override suspend fun clear() {
         clearDiskCache()

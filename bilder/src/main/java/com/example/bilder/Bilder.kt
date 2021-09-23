@@ -1,6 +1,6 @@
 package com.example.bilder
 
-import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.View
@@ -8,8 +8,6 @@ import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import com.example.bilder.cache.*
 import com.example.bilder.cache.Cache
-import com.example.bilder.cache.DiskCache
-import com.example.bilder.cache.InMemoryCache
 import com.example.bilder.network.BilderDownloader
 import com.example.bilder.network.DownloadRequest
 import kotlinx.coroutines.*
@@ -33,9 +31,13 @@ object Bilder {
     /**
      * For caching bitmaps.
      * */
-    private var imageCache: Cache<Bitmap?, Bitmap?>? = null
+    private var mixCache: Cache<Bitmap?, Bitmap?>? = null
+    private var inMemoryCache: Cache<Bitmap?, Bitmap?>? = null
+    private var diskCache: Cache<Bitmap?, Bitmap?>? = null
 
-    class Config(private val activity: Activity) {
+    private var areCacheInitialized = false
+
+    class Config {
 
         var disableMemoryCache: Boolean = false
         var disableDiskCache: Boolean = false
@@ -59,16 +61,13 @@ object Bilder {
             placeHolder: Int? = null
         ) = Task(
             kotlin.run {
-                synchronized(this) {
-                    if (imageCache == null) {
-                        imageCache = when {
-                            disableMemoryCache && !disableDiskCache -> DiskCache(activity)
-                            !disableDiskCache && disableMemoryCache -> InMemoryCache()
-                            !disableDiskCache && !disableMemoryCache -> BilderCache(activity)
-                            else -> null
-                        }
-                    }
+                val imageCache = when {
+                    disableMemoryCache && !disableDiskCache -> diskCache
+                    !disableDiskCache && disableMemoryCache -> inMemoryCache
+                    !disableDiskCache && !disableMemoryCache -> mixCache
+                    else -> null
                 }
+
                 imageView?.setImageResource(placeHolder ?: 0)
                 scope.launch {
                     val key = geKey(source)
@@ -79,7 +78,7 @@ object Bilder {
                     } ?: run {
                         when (source) {
                             is Source.Url -> {
-                                imageDownloader.download(source.src, activity).run {
+                                imageDownloader.download(source.src).run {
                                     when (this) {
                                         is DownloadRequest.Success -> {
                                             getDownScaledBitmap(
@@ -113,7 +112,7 @@ object Bilder {
                             }
                             is Source.DrawableRes -> {
                                 getDownScaledBitmap(
-                                    activity.resources,
+                                    imageView?.context?.resources,
                                     source.src,
                                     imageView?.width,
                                     imageView?.height
@@ -130,9 +129,25 @@ object Bilder {
         )
     }
 
-    fun init(activity: Activity) = Config(activity).also {
+    /**
+     * Initializing scope if it is canceled and create cache for first time access.
+     * */
+    fun init(context: Context) = Config().also {
         if (scope.coroutineContext[Job]?.isCancelled == true) scope =
             CoroutineScope(Dispatchers.Main)
+        synchronized(this) {
+            if (!areCacheInitialized) {
+                mixCache = BilderCache(
+                    InMemoryCache().also {
+                        this.diskCache = it
+                    },
+                    DiskCache(context).also {
+                        this.inMemoryCache = it
+                    }
+                )
+                areCacheInitialized = true
+            }
+        }
     }
 
     /**
@@ -152,16 +167,14 @@ object Bilder {
         imageView: ImageView?,
         scope: CoroutineScope,
     ) {
-        imageView?.run {
-            addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(p0: View?) {
-                }
+        imageView?.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(p0: View?) {
+            }
 
-                override fun onViewDetachedFromWindow(p0: View?) {
-                    scope.cancel()
-                }
-            })
-        }
+            override fun onViewDetachedFromWindow(p0: View?) {
+                scope.cancel()
+            }
+        })
     }
 
     /**

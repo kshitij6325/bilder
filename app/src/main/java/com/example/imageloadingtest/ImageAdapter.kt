@@ -1,7 +1,5 @@
 package com.example.imageloadingtest
 
-import android.app.Activity
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,11 +22,7 @@ class ImageAdapter(private val list: List<Pair<Int, String>>, private val bilder
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        Bilder.init(holder.image.context as Activity).configure {
-            onBitmapLoadFailure = {
-                Log.e("Bilder:: ", it.message.toString())
-            }
-        }.load(Source.Url(list[position].second), imageView = holder.image)
+        bilder.load(Source.Url(list[position].second), imageView = holder.image)
     }
 
     override fun getItemCount() = list.size
