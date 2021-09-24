@@ -18,10 +18,7 @@ class MainActivity : AppCompatActivity() {
             it.bn.setOnClickListener { Bilder.stop() }
             it.recyclerView.adapter = ImageAdapter(
                 getImageList(),
-                Bilder.init(this).configure {
-                    disableMemoryCache = true
-                    disableDiskCache = true
-                }
+
             )
             it.recyclerView.layoutManager =
                 GridLayoutManager(this, 4)

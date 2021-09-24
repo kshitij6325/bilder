@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.bilder.Bilder
 import com.example.bilder.Source
 
-class ImageAdapter(private val list: List<Pair<Int, String>>, private val bilder: Bilder.Config) :
+class ImageAdapter(private val list: List<Pair<Int, String>>) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
 
     class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -22,7 +22,8 @@ class ImageAdapter(private val list: List<Pair<Int, String>>, private val bilder
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        bilder.load(Source.Url(list[position].second), imageView = holder.image)
+        Bilder.init(holder.image.context)
+            .load(Source.Url(list[position].second), imageView = holder.image)
     }
 
     override fun getItemCount() = list.size
